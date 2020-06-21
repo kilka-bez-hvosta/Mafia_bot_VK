@@ -15,29 +15,31 @@ def main():
     longpoll = VkBotLongPoll(vk_session, 193531598)
     vk = vk_session.get_api()
     for event in longpoll.listen():
-        print(event)
+
         if event.type == VkBotEventType.MESSAGE_NEW and event.from_chat:
+            print(event)
             if event.obj.message['text'] == 'Кто играет - ставьте плюс:' and event.chat_id not in games.keys() :
                 games[event.chat_id] = ['подключение игроков', dict()]
             if event.chat_id in games.keys() and games[event.chat_id][0] == 'подключение игроков':
-                if event.obj.message['text'] == '+':
-                    games[event.chat_id][1][event.from_id] = 'мирный житель'
+                if event.obj.message['text'] == '+' and event.obj.message['from_id'] not in games[event.chat_id][1].keys():
+                    games[event.chat_id][1][event.obj.message['from_id']] = 'мирный житель'
                 if event.obj.message['text'] == 'Начали!':
-
-                    games[event.chat_id][0] = 'идет игра'
+                    games[event.chat_id][0] = 'день 1'
                     for player in games[event.chat_id][1].keys():
-                        if ((len(games[event.chat_id][1].keys()) == 5)):
+                        if ((len(games[event.chat_id][1].keys()) == 2)):
                             variant = GAME_VARIATIONS[-1]
-                        elif ((len(games[event.chat_id][1].keys()) <= 8)):
+                        elif ((len(games[event.chat_id][1].keys()) in [5, 6, 7, 8])):
                             variant = GAME_VARIATIONS[-2]
-                        elif ((len(games[event.chat_id][1].keys()) >= 8)):
+                        elif ((len(games[event.chat_id][1].keys()) > 8)):
                             variant = GAME_VARIATIONS[0]
-                        variant[-1] += ["мирный житель"]
-                        games[event.chat_id][1][player] = variant[-1].pop(variant[-1].index(random.choice(variant[-1])))
-
-                        vk.messages.send(user_id=event.obj.message['from_id'],
+                        variant += ["мирный житель"]
+                        games[event.chat_id][1][player] = variant.pop(variant.index(random.choice(variant)))
+                        vk.messages.send(user_id=int(player),
                                         message=games[event.chat_id][1][player],
                                         random_id=random.randint(0, 2 ** 64))
+                    vk.messages.send(chat_id=event.chat_id,
+                                     message='День Первый. Игроки, ознакомьтесь со своими ролями.',
+                                     random_id=random.randint(0, 2 ** 64))
 
 
 
